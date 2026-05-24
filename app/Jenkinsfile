@@ -54,6 +54,7 @@ pipeline {
             steps {
                 sh '''
                     AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+                    aws eks update-kubeconfig --name dr-chaos-eks --region $AWS_DEFAULT_REGION
                     kubectl set image deployment/my-service my-service=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG -n default
                     kubectl rollout status deployment/my-service -n default
                 '''
