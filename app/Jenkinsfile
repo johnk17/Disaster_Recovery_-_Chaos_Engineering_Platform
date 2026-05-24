@@ -62,12 +62,9 @@ pipeline {
         }
         stage('Smoke Test') {
             steps {
-                sh '''
-                    STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://my-service.production.svc.cluster.local:8080/actuator/health)
-                    if [ "$STATUS" -ne 200 ]; then
-                        exit 1
-                    fi
-                '''
+                script {
+                    sh 'kubectl run smoke-test-pod --rm -i --restart=Never --image=curlimages/curl -- --fail -s http://my-service:8080/actuator/health'
+                }
             }
         }
     }
