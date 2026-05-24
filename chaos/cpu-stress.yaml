@@ -1,0 +1,18 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: cpu-stress
+  namespace: production
+spec:
+  mode: fixed
+  value: '2'
+  selector:
+    namespaces:
+      - production
+    labelSelectors:
+      'app': 'my-service'
+  stressors:
+    cpu:
+      workers: 1
+      load: 80
+  duration: '2m'

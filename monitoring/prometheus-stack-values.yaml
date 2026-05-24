@@ -1,0 +1,33 @@
+grafana:
+  adminPassword: "prom-operator"
+  envFromSecret: "grafana-admin-credentials"
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp3
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+
+alertmanager:
+  config:
+    global:
+      slack_api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+    route:
+      group_by: ['alertname', 'job']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 3h
+      receiver: 'pagerduty-and-slack'
+    receivers:
+    - name: 'pagerduty-and-slack'
+      pagerduty_configs:
+      - service_key: 'YOUR_PAGERDUTY_ROUTING_KEY'
+      slack_configs:
+      - channel: '#alerts'
+        text: "<!channel> \nsummary: {{ .CommonAnnotations.summary }}\ndescription: {{ .CommonAnnotations.description }}"

@@ -1,0 +1,46 @@
+{
+  "title": "Spring Boot App - Main Dashboard",
+  "uid": "springboot-main",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Request Rate (RPS)",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count[1m]))",
+          "legendFormat": "RPS"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "P95 Latency",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[1m])) by (le))",
+          "legendFormat": "P95"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Error Rate",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count[1m]))",
+          "legendFormat": "Error Rate"
+        }
+      ]
+    },
+    {
+      "type": "gauge",
+      "title": "JVM Heap Usage",
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"}"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 30
+}

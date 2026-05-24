@@ -1,0 +1,64 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: custom-alerts
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+  - name: application.rules
+    rules:
+    - alert: PodRestartLoop
+      expr: rate(kube_pod_container_status_restarts_total{namespace="production"}[5m]) > 0.1
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Pod Restart Loop Detected"
+        description: "Pod {{ $labels.pod }} is restarting frequently."
+
+    - alert: HighErrorRate
+      expr: sum(rate(http_server_requests_seconds_count{status=~"5.."}[1m])) / sum(rate(http_server_requests_seconds_count[1m])) > 0.01
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "High HTTP Error Rate"
+        description: "Error rate is > 1% for the last 1 minute."
+
+    - alert: JVMHeapPressure
+      expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.85
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "JVM Heap Memory Pressure"
+        description: "JVM Heap usage is above 85%."
+
+    - alert: ChaosExperimentActive
+      expr: chaos_mesh_experiment_active_total > 0
+      for: 1m
+      labels:
+        severity: info
+      annotations:
+        summary: "Chaos Mesh Experiment Active"
+        description: "A Chaos Mesh experiment is currently running."
+
+    - alert: SLOErrorBudgetBurnFast
+      expr: sum(rate(http_server_requests_seconds_count{status=~"5.."}[1h])) / sum(rate(http_server_requests_seconds_count[1h])) > (14 * 0.001)
+      for: 1h
+      labels:
+        severity: critical
+      annotations:
+        summary: "Error Budget burning rapidly"
+        description: "14x burn rate detected over the last hour."
+
+    - alert: SLOErrorBudgetBurnSlow
+      expr: sum(rate(http_server_requests_seconds_count{status=~"5.."}[6h])) / sum(rate(http_server_requests_seconds_count[6h])) > (6 * 0.001)
+      for: 6h
+      labels:
+        severity: warning
+      annotations:
+        summary: "Error Budget burning slowly"
+        description: "6x burn rate detected over the last 6 hours."

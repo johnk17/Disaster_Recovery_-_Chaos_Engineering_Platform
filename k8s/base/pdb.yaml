@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: my-service-pdb
+  labels:
+    app: my-service
+    env: production
+    version: 1.0.0
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: my-service
