@@ -11,7 +11,7 @@ spec:
       app: my-service
   namespaceSelector:
     matchNames:
-      - production
+      - default
   endpoints:
   - port: http
     path: /actuator/prometheus

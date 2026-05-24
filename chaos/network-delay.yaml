@@ -2,17 +2,17 @@ apiVersion: chaos-mesh.org/v1alpha1
 kind: NetworkChaos
 metadata:
   name: network-delay
-  namespace: production
+  namespace: default
 spec:
   action: delay
   mode: all
   selector:
     namespaces:
-      - production
+      - default
     labelSelectors:
       'app': 'my-service'
   delay:
     latency: '200ms'
     jitter: '50ms'
-  direction: egress
+  direction: to
   duration: '3m'

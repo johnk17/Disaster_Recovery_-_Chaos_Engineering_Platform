@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DR Chaos Platform — Disaster Recovery & Chaos Engineering</title>
+    <meta name="description" content="A production-grade Disaster Recovery & Chaos Engineering Platform built with AWS EKS, Jenkins, Prometheus, Grafana, and Chaos Mesh.">
+    <meta name="author" content="John K">
+    <meta property="og:title" content="DR Chaos Platform">
+    <meta property="og:description" content="Production-grade Disaster Recovery & Chaos Engineering Platform on AWS">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #050810;
+            --bg-card: rgba(15, 20, 40, 0.6);
+            --bg-card-solid: #0f1428;
+            --border: rgba(99, 102, 241, 0.12);
+            --border-hover: rgba(99, 102, 241, 0.35);
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --text-muted: #475569;
+            --indigo: #6366f1;
+            --cyan: #06b6d4;
+            --emerald: #10b981;
+            --amber: #f59e0b;
+            --rose: #f43f5e;
+            --purple: #a855f7;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* === BACKGROUND === */
+        .bg-grid {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image:
+                linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px);
+            background-size: 64px 64px;
+        }
+        .bg-glow {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 60% 40% at 25% 30%, rgba(99,102,241,0.08), transparent),
+                radial-gradient(ellipse 50% 50% at 75% 70%, rgba(6,182,212,0.06), transparent),
+                radial-gradient(ellipse 40% 30% at 50% 90%, rgba(168,85,247,0.05), transparent);
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 1; }
+
+        /* === NAV === */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            padding: 1rem 2rem;
+            background: rgba(5, 8, 16, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+        .nav-logo { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: var(--text); }
+        .nav-logo-icon {
+            width: 38px; height: 38px; background: linear-gradient(135deg, var(--indigo), var(--cyan));
+            border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+            box-shadow: 0 0 20px rgba(99,102,241,0.3);
+        }
+        .nav-logo-text { font-weight: 700; font-size: 1rem; letter-spacing: -0.02em; }
+        .nav-links { display: flex; gap: 2rem; list-style: none; }
+        .nav-links a {
+            color: var(--text-dim); text-decoration: none; font-size: 0.85rem; font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text); }
+        .nav-gh {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.5rem 1rem; border-radius: 8px;
+            background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25);
+            color: var(--indigo); font-size: 0.8rem; font-weight: 600; text-decoration: none;
+            transition: all 0.2s;
+        }
+        .nav-gh:hover { background: rgba(99,102,241,0.2); }
+
+        /* === HERO === */
+        .hero {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            text-align: center; padding: 8rem 2rem 4rem;
+        }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.4rem 1rem; border-radius: 100px;
+            background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
+            font-size: 0.75rem; font-weight: 500; color: var(--indigo);
+            margin-bottom: 1.5rem;
+            animation: fadeUp 0.8s ease backwards;
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 900;
+            letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 1.5rem;
+            animation: fadeUp 0.8s ease 0.1s backwards;
+        }
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--indigo), var(--cyan), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.15rem; color: var(--text-dim); max-width: 640px; margin: 0 auto 2.5rem;
+            animation: fadeUp 0.8s ease 0.2s backwards;
+        }
+        .hero-btns {
+            display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+            animation: fadeUp 0.8s ease 0.3s backwards;
+        }
+        .btn {
+            padding: 0.75rem 1.75rem; border-radius: 10px; font-size: 0.9rem; font-weight: 600;
+            text-decoration: none; transition: all 0.3s; cursor: pointer; border: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--indigo), var(--cyan));
+            color: white; box-shadow: 0 0 30px rgba(99,102,241,0.3);
+        }
+        .btn-primary:hover { box-shadow: 0 0 40px rgba(99,102,241,0.5); transform: translateY(-2px); }
+        .btn-outline {
+            background: transparent; border: 1px solid var(--border-hover);
+            color: var(--text-dim);
+        }
+        .btn-outline:hover { border-color: var(--indigo); color: var(--text); }
+
+        .hero-stats {
+            display: flex; justify-content: center; gap: 3rem; margin-top: 4rem;
+            animation: fadeUp 0.8s ease 0.4s backwards;
+        }
+        .hero-stat-value {
+            font-size: 2rem; font-weight: 800; letter-spacing: -0.03em;
+            background: linear-gradient(135deg, var(--indigo), var(--cyan));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .hero-stat-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* === SECTIONS === */
+        section { padding: 6rem 0; }
+        .section-label {
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--indigo); font-weight: 600; margin-bottom: 0.75rem;
+        }
+        .section-title {
+            font-size: 2.25rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 1rem;
+        }
+        .section-desc { color: var(--text-dim); max-width: 600px; margin-bottom: 3rem; }
+
+        /* === PIPELINE === */
+        .pipeline-flow {
+            display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem;
+            position: relative;
+        }
+        .pipeline-flow::before {
+            content: ''; position: absolute; top: 50%; left: 5%; right: 5%; height: 2px;
+            background: linear-gradient(90deg, var(--indigo), var(--cyan), var(--emerald));
+            opacity: 0.3; z-index: 0;
+        }
+        .pipe-stage {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+            padding: 1.5rem 1rem; text-align: center; position: relative; z-index: 1;
+            transition: all 0.3s;
+        }
+        .pipe-stage:hover {
+            border-color: var(--border-hover); transform: translateY(-4px);
+            box-shadow: 0 0 30px rgba(99,102,241,0.15);
+        }
+        .pipe-icon { font-size: 1.8rem; margin-bottom: 0.75rem; }
+        .pipe-num {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+            color: var(--indigo); font-weight: 600; margin-bottom: 0.25rem;
+        }
+        .pipe-name { font-size: 0.85rem; font-weight: 600; }
+        .pipe-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.35rem; }
+
+        /* === CHAOS === */
+        .chaos-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem;
+        }
+        .chaos-card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+            padding: 1.75rem; transition: all 0.3s; position: relative; overflow: hidden;
+        }
+        .chaos-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        }
+        .chaos-card:nth-child(1)::before { background: linear-gradient(90deg, var(--rose), var(--amber)); }
+        .chaos-card:nth-child(2)::before { background: linear-gradient(90deg, var(--amber), var(--rose)); }
+        .chaos-card:nth-child(3)::before { background: linear-gradient(90deg, var(--cyan), var(--indigo)); }
+        .chaos-card:nth-child(4)::before { background: linear-gradient(90deg, var(--purple), var(--rose)); }
+        .chaos-card:hover {
+            border-color: var(--border-hover); transform: translateY(-3px);
+            box-shadow: 0 0 30px rgba(99,102,241,0.1);
+        }
+        .chaos-card-icon { font-size: 2rem; margin-bottom: 1rem; }
+        .chaos-card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.4rem; }
+        .chaos-card-desc { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem; }
+        .chaos-card-meta {
+            display: flex; gap: 0.75rem;
+        }
+        .chaos-tag {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: 500;
+            padding: 0.3rem 0.65rem; border-radius: 6px;
+            background: rgba(30,41,59,0.6); color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        /* === TERMINAL === */
+        .terminal {
+            background: #0c1021; border: 1px solid rgba(99,102,241,0.15); border-radius: 16px;
+            overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            max-width: 800px; margin: 3rem auto 0;
+        }
+        .terminal-bar {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.75rem 1rem; background: rgba(15,20,40,0.8);
+            border-bottom: 1px solid rgba(99,102,241,0.1);
+        }
+        .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .terminal-dot:nth-child(1) { background: #f43f5e; }
+        .terminal-dot:nth-child(2) { background: #f59e0b; }
+        .terminal-dot:nth-child(3) { background: #10b981; }
+        .terminal-title {
+            flex: 1; text-align: center; font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem; color: var(--text-muted);
+        }
+        .terminal-body {
+            padding: 1.25rem 1.5rem; font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem; line-height: 1.8;
+        }
+        .t-prompt { color: var(--emerald); }
+        .t-cmd { color: var(--text); }
+        .t-status { color: var(--cyan); }
+        .t-kill { color: var(--rose); }
+        .t-new { color: var(--amber); }
+        .t-ok { color: var(--emerald); }
+        .t-dim { color: var(--text-muted); }
+
+        /* === TECH STACK === */
+        .tech-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+        }
+        .tech-item {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+            padding: 1.5rem; text-align: center; transition: all 0.3s;
+        }
+        .tech-item:hover {
+            border-color: var(--border-hover); transform: translateY(-3px);
+            box-shadow: 0 0 25px rgba(99,102,241,0.1);
+        }
+        .tech-item-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+        .tech-item-name { font-size: 0.9rem; font-weight: 600; }
+        .tech-item-role { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+        /* === ARCHITECTURE === */
+        .arch-flow {
+            display: flex; align-items: center; justify-content: center;
+            flex-wrap: wrap; gap: 0.5rem; padding: 2rem 0;
+        }
+        .arch-node {
+            padding: 0.75rem 1.25rem; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 10px; font-size: 0.85rem; font-weight: 500;
+            display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s;
+        }
+        .arch-node:hover { border-color: var(--border-hover); }
+        .arch-arrow { color: var(--indigo); font-size: 1.2rem; font-weight: 300; }
+
+        /* === METRICS CARDS === */
+        .metrics-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 3rem;
+        }
+        .metric-card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+            padding: 2rem; text-align: center; transition: all 0.3s;
+        }
+        .metric-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+        .metric-value {
+            font-size: 2.5rem; font-weight: 900; letter-spacing: -0.03em;
+        }
+        .metric-card:nth-child(1) .metric-value { color: var(--emerald); }
+        .metric-card:nth-child(2) .metric-value { color: var(--cyan); }
+        .metric-card:nth-child(3) .metric-value { color: var(--amber); }
+        .metric-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; }
+
+        /* === FOOTER === */
+        footer {
+            text-align: center; padding: 3rem 2rem;
+            border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem;
+        }
+        footer a { color: var(--indigo); text-decoration: none; }
+
+        /* === SCROLL ANIMATION === */
+        .reveal {
+            opacity: 0; transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 768px) {
+            .pipeline-flow { grid-template-columns: repeat(3, 1fr); }
+            .chaos-grid, .tech-grid { grid-template-columns: 1fr; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .hero-stats { flex-direction: column; gap: 1.5rem; }
+            .nav-links { display: none; }
+            .arch-flow { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+
+    <!-- Nav -->
+    <nav>
+        <div class="nav-inner">
+            <a href="#" class="nav-logo">
+                <div class="nav-logo-icon">⚡</div>
+                <span class="nav-logo-text">DR Chaos Platform</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#pipeline">Pipeline</a></li>
+                <li><a href="#chaos">Chaos</a></li>
+                <li><a href="#demo">Live Demo</a></li>
+                <li><a href="#tech">Tech Stack</a></li>
+            </ul>
+            <a href="https://github.com/johnk17/Disaster_Recovery_-_Chaos_Engineering_Platform" target="_blank" class="nav-gh">⭐ GitHub</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div>
+            <div class="hero-badge">🔬 Cloud-Native Chaos Engineering</div>
+            <h1>Break Things.<br><span class="gradient">Build Resilience.</span></h1>
+            <p>A production-grade Disaster Recovery & Chaos Engineering Platform that deliberately injects failures into running systems to prove they can survive real-world catastrophes.</p>
+            <div class="hero-btns">
+                <a href="https://github.com/johnk17/Disaster_Recovery_-_Chaos_Engineering_Platform" target="_blank" class="btn btn-primary">View Source Code →</a>
+                <a href="#demo" class="btn btn-outline">See Live Demo ↓</a>
+            </div>
+            <div class="hero-stats">
+                <div><div class="hero-stat-value">6</div><div class="hero-stat-label">Pipeline Stages</div></div>
+                <div><div class="hero-stat-value">4</div><div class="hero-stat-label">Chaos Experiments</div></div>
+                <div><div class="hero-stat-value">26s</div><div class="hero-stat-label">Recovery Time</div></div>
+                <div><div class="hero-stat-value">12</div><div class="hero-stat-label">Technologies</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section id="arch">
+        <div class="container reveal">
+            <div class="section-label">Architecture</div>
+            <div class="section-title">End-to-End Automated Flow</div>
+            <div class="section-desc">From code commit to chaos — fully automated with zero manual intervention.</div>
+            <div class="arch-flow">
+                <div class="arch-node">📝 Git Push</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">🔧 Jenkins CI/CD</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">🧪 Maven Test</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">🐳 Docker Build</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">🔍 Trivy Scan</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">☸️ EKS Deploy</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">📊 Grafana</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">🌪️ Chaos Mesh</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pipeline -->
+    <section id="pipeline">
+        <div class="container reveal">
+            <div class="section-label">CI/CD Pipeline</div>
+            <div class="section-title">6-Stage Automated Delivery</div>
+            <div class="section-desc">Every code push triggers a fully automated pipeline — from unit tests to production deployment with zero-downtime rolling updates.</div>
+            <div class="pipeline-flow">
+                <div class="pipe-stage">
+                    <div class="pipe-icon">🧪</div>
+                    <div class="pipe-num">STAGE 01</div>
+                    <div class="pipe-name">Test</div>
+                    <div class="pipe-desc">JUnit + Maven</div>
+                </div>
+                <div class="pipe-stage">
+                    <div class="pipe-icon">📦</div>
+                    <div class="pipe-num">STAGE 02</div>
+                    <div class="pipe-name">Build</div>
+                    <div class="pipe-desc">Maven Package</div>
+                </div>
+                <div class="pipe-stage">
+                    <div class="pipe-icon">🐳</div>
+                    <div class="pipe-num">STAGE 03</div>
+                    <div class="pipe-name">Docker</div>
+                    <div class="pipe-desc">Build + Push ECR</div>
+                </div>
+                <div class="pipe-stage">
+                    <div class="pipe-icon">🔍</div>
+                    <div class="pipe-num">STAGE 04</div>
+                    <div class="pipe-name">Security</div>
+                    <div class="pipe-desc">Trivy CVE Scan</div>
+                </div>
+                <div class="pipe-stage">
+                    <div class="pipe-icon">☸️</div>
+                    <div class="pipe-num">STAGE 05</div>
+                    <div class="pipe-name">Deploy</div>
+                    <div class="pipe-desc">EKS Rolling Update</div>
+                </div>
+                <div class="pipe-stage">
+                    <div class="pipe-icon">💨</div>
+                    <div class="pipe-num">STAGE 06</div>
+                    <div class="pipe-name">Smoke Test</div>
+                    <div class="pipe-desc">In-cluster Health</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chaos -->
+    <section id="chaos">
+        <div class="container reveal">
+            <div class="section-label">Chaos Engineering</div>
+            <div class="section-title">4 Failure Scenarios</div>
+            <div class="section-desc">Deliberately injecting real-world failures to prove the system recovers automatically — the same approach used by Netflix, Google, and Amazon.</div>
+            <div class="chaos-grid">
+                <div class="chaos-card">
+                    <div class="chaos-card-icon">🔪</div>
+                    <div class="chaos-card-title">Pod Kill</div>
+                    <div class="chaos-card-desc">Randomly terminates a running container to verify Kubernetes self-healing. The killed pod is automatically replaced within seconds.</div>
+                    <div class="chaos-card-meta">
+                        <span class="chaos-tag">PodChaos</span>
+                        <span class="chaos-tag">mode: one</span>
+                        <span class="chaos-tag">recovery: 26s</span>
+                    </div>
+                </div>
+                <div class="chaos-card">
+                    <div class="chaos-card-icon">🔥</div>
+                    <div class="chaos-card-title">CPU Stress</div>
+                    <div class="chaos-card-desc">Spikes CPU utilization to 80% on multiple pods to test resource limits, autoscaling behavior, and application degradation under load.</div>
+                    <div class="chaos-card-meta">
+                        <span class="chaos-tag">StressChaos</span>
+                        <span class="chaos-tag">load: 80%</span>
+                        <span class="chaos-tag">duration: 2m</span>
+                    </div>
+                </div>
+                <div class="chaos-card">
+                    <div class="chaos-card-icon">🌐</div>
+                    <div class="chaos-card-title">Network Delay</div>
+                    <div class="chaos-card-desc">Injects 200ms ± 50ms latency into outgoing traffic to simulate degraded network conditions and test timeout/retry configurations.</div>
+                    <div class="chaos-card-meta">
+                        <span class="chaos-tag">NetworkChaos</span>
+                        <span class="chaos-tag">latency: 200ms</span>
+                        <span class="chaos-tag">duration: 3m</span>
+                    </div>
+                </div>
+                <div class="chaos-card">
+                    <div class="chaos-card-icon">💀</div>
+                    <div class="chaos-card-title">DNS Failure</div>
+                    <div class="chaos-card-desc">Completely breaks DNS resolution to simulate a catastrophic infrastructure failure. Tests application resilience when dependent services become unreachable.</div>
+                    <div class="chaos-card-meta">
+                        <span class="chaos-tag">DNSChaos</span>
+                        <span class="chaos-tag">pattern: *</span>
+                        <span class="chaos-tag">duration: 1m</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Demo -->
+    <section id="demo">
+        <div class="container reveal">
+            <div class="section-label">Live Proof</div>
+            <div class="section-title">Self-Healing in Action</div>
+            <div class="section-desc">Real terminal output from a Pod Kill chaos experiment — watch the system detect the failure and auto-recover in 26 seconds.</div>
+            <div class="terminal">
+                <div class="terminal-bar">
+                    <div class="terminal-dot"></div>
+                    <div class="terminal-dot"></div>
+                    <div class="terminal-dot"></div>
+                    <div class="terminal-title">kubectl get pods -n default -w</div>
+                </div>
+                <div class="terminal-body">
+                    <span class="t-dim">NAME                          READY   STATUS              AGE</span><br>
+                    <span class="t-ok">my-service-58bc-nf7dq   1/1     Running             21m</span><br>
+                    <span class="t-ok">my-service-58bc-ns6xk   1/1     Running             21m</span><br>
+                    <span class="t-ok">my-service-58bc-rddr8   1/1     Running             21m</span><br>
+                    <br>
+                    <span class="t-prompt">$ </span><span class="t-cmd">kubectl apply -f chaos/pod-kill.yaml</span><br>
+                    <span class="t-dim">podchaos.chaos-mesh.org/pod-kill created</span><br>
+                    <br>
+                    <span class="t-kill">my-service-58bc-rddr8   1/1     Terminating         21m</span>  <span class="t-dim">← 🔪 Pod killed by Chaos Mesh</span><br>
+                    <span class="t-new">my-service-58bc-z4wmt   0/1     Pending             0s</span>   <span class="t-dim">← ☸️ Kubernetes detected failure</span><br>
+                    <span class="t-new">my-service-58bc-z4wmt   0/1     ContainerCreating   0s</span>   <span class="t-dim">← 🔨 Creating replacement</span><br>
+                    <span class="t-status">my-service-58bc-z4wmt   0/1     Running             1s</span>   <span class="t-dim">← 🚀 New pod starting</span><br>
+                    <span class="t-ok">my-service-58bc-z4wmt   1/1     Running             26s</span>  <span class="t-dim">← ✅ Fully recovered!</span><br>
+                </div>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value">26s</div>
+                    <div class="metric-label">Recovery Time</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">0</div>
+                    <div class="metric-label">Requests Dropped</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">100%</div>
+                    <div class="metric-label">Uptime Maintained</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack -->
+    <section id="tech">
+        <div class="container reveal">
+            <div class="section-label">Technology Stack</div>
+            <div class="section-title">12 Technologies Working Together</div>
+            <div class="section-desc">Every component is industry-standard, open-source, and production-proven.</div>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <div class="tech-item-icon">☕</div>
+                    <div class="tech-item-name">Spring Boot 3.2</div>
+                    <div class="tech-item-role">Application Framework</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-item-icon">☕</div>
+                    <div class="tech-item-name">Java 21</div>
+                    <div class="tech-item-role">Runtime</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-item-icon">🐳</div>
+                    <div class="tech-item-name">Docker</div>
+                    <div class="tech-item-role">Containerization</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-item-icon">☸️</div>
+                    <div class="tech-item-name">Kubernetes</div>
+                    <div class="tech-item-role">Orchestration</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-item-icon">☁️</div>
+                    <div class="tech-item-name">AWS EKS</div>
+                    <div class="tech-item-role">Managed Kubernetes</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-item-icon">📦</div>
+                    <div class="tech-item-name">AWS ECR</div>
+                    <div class="tech-item-role">Container Registry</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-item-icon">🏗️</div>
+                    <div class="tech-item-name">Terraform</div>
+                    <div class="tech-item-role">Infrastructure as Code</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-item-icon">🔧</div>
+                    <div class="tech-item-name">Jenkins</div>
+                    <div class="tech-item-role">CI/CD Pipeline</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-item-icon">📊</div>
+                    <div class="tech-item-name">Prometheus</div>
+                    <div class="tech-item-role">Metrics Collection</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-item-icon">📈</div>
+                    <div class="tech-item-name">Grafana</div>
+                    <div class="tech-item-role">Visualization</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-item-icon">🌪️</div>
+                    <div class="tech-item-name">Chaos Mesh</div>
+                    <div class="tech-item-role">Chaos Engineering</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-item-icon">🔍</div>
+                    <div class="tech-item-name">Trivy</div>
+                    <div class="tech-item-role">Security Scanner</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>Built by <strong>John K</strong> — <a href="https://github.com/johnk17/Disaster_Recovery_-_Chaos_Engineering_Platform" target="_blank">View on GitHub</a></p>
+        <p style="margin-top: 0.5rem;">Disaster Recovery & Chaos Engineering Platform © 2026</p>
+    </footer>
+
+    <script>
+        // Scroll reveal
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // Terminal typing effect
+        const lines = document.querySelectorAll('.terminal-body > *');
+        lines.forEach((line, i) => {
+            line.style.opacity = '0';
+            line.style.animation = `fadeUp 0.4s ease ${i * 0.15}s forwards`;
+        });
+
+        const termObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const lines = entry.target.querySelectorAll('.terminal-body > *');
+                    lines.forEach((line, i) => {
+                        line.style.animation = `fadeUp 0.4s ease ${i * 0.15}s forwards`;
+                    });
+                }
+            });
+        }, { threshold: 0.3 });
+
+        document.querySelectorAll('.terminal').forEach(el => termObserver.observe(el));
+    </script>
+</body>
+</html>

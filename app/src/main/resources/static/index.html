@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DR Chaos Platform — Command Center</title>
+    <meta name="description" content="Disaster Recovery & Chaos Engineering Platform - Real-time monitoring, CI/CD pipeline status, and chaos experiment control center.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --bg-card-hover: rgba(30, 41, 59, 0.8);
+            --border-color: rgba(99, 102, 241, 0.15);
+            --border-glow: rgba(99, 102, 241, 0.4);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-indigo: #6366f1;
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --accent-purple: #a855f7;
+            --gradient-main: linear-gradient(135deg, #6366f1, #06b6d4);
+            --gradient-success: linear-gradient(135deg, #10b981, #06b6d4);
+            --gradient-danger: linear-gradient(135deg, #f43f5e, #f59e0b);
+            --gradient-purple: linear-gradient(135deg, #a855f7, #6366f1);
+            --shadow-glow: 0 0 30px rgba(99, 102, 241, 0.15);
+            --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(99, 102, 241, 0.08), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 20%, rgba(6, 182, 212, 0.06), transparent),
+                radial-gradient(ellipse 50% 60% at 50% 80%, rgba(168, 85, 247, 0.05), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Grid pattern overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            background: rgba(10, 14, 26, 0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 44px;
+            height: 44px;
+            background: var(--gradient-main);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
+            50% { box-shadow: 0 0 35px rgba(99, 102, 241, 0.5); }
+        }
+
+        .header-title h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-title p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 2px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--accent-emerald);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-emerald);
+            border-radius: 50%;
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .live-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Main content */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Section titles */
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--border-color), transparent);
+        }
+
+        /* Stats row */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .stat-card:nth-child(1)::before { background: var(--gradient-success); }
+        .stat-card:nth-child(2)::before { background: var(--gradient-main); }
+        .stat-card:nth-child(3)::before { background: var(--gradient-purple); }
+        .stat-card:nth-child(4)::before { background: var(--gradient-danger); }
+
+        .stat-card:hover {
+            border-color: var(--border-glow);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .stat-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card:nth-child(1) .stat-icon { background: rgba(16, 185, 129, 0.15); }
+        .stat-card:nth-child(2) .stat-icon { background: rgba(99, 102, 241, 0.15); }
+        .stat-card:nth-child(3) .stat-icon { background: rgba(168, 85, 247, 0.15); }
+        .stat-card:nth-child(4) .stat-icon { background: rgba(244, 63, 94, 0.15); }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1;
+        }
+
+        .stat-card:nth-child(1) .stat-value { color: var(--accent-emerald); }
+        .stat-card:nth-child(2) .stat-value { color: var(--accent-indigo); }
+        .stat-card:nth-child(3) .stat-value { color: var(--accent-purple); }
+        .stat-card:nth-child(4) .stat-value { color: var(--accent-rose); }
+
+        .stat-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* Two column layout */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--border-glow);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-badge {
+            font-size: 0.65rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 100px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-live {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .badge-ready {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-indigo);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+        }
+
+        /* Pipeline stages */
+        .pipeline {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .pipeline-stage {
+            flex: 1;
+            min-width: 100px;
+            padding: 0.75rem;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 10px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .pipeline-stage:hover {
+            background: rgba(16, 185, 129, 0.15);
+            transform: scale(1.02);
+        }
+
+        .pipeline-stage .stage-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--accent-emerald);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .pipeline-stage .stage-name {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .pipeline-stage .stage-icon {
+            font-size: 1.2rem;
+            margin-bottom: 0.35rem;
+        }
+
+        /* Pod status */
+        .pods-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .pod {
+            padding: 1rem;
+            background: rgba(16, 185, 129, 0.06);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pod:hover {
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .pod-status-indicator {
+            width: 10px;
+            height: 10px;
+            background: var(--accent-emerald);
+            border-radius: 50%;
+            margin: 0 auto 0.5rem;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        .pod:nth-child(2) .pod-status-indicator { animation-delay: 0.6s; }
+        .pod:nth-child(3) .pod-status-indicator { animation-delay: 1.2s; }
+
+        .pod-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .pod-status {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-emerald);
+        }
+
+        .pod-meta {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
+        }
+
+        /* Chaos experiments */
+        .chaos-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .chaos-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.85rem 1rem;
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chaos-item:hover {
+            background: rgba(30, 41, 59, 0.7);
+            border-color: var(--border-glow);
+            transform: translateX(4px);
+        }
+
+        .chaos-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .chaos-item:nth-child(1) .chaos-icon { background: rgba(244, 63, 94, 0.15); }
+        .chaos-item:nth-child(2) .chaos-icon { background: rgba(245, 158, 11, 0.15); }
+        .chaos-item:nth-child(3) .chaos-icon { background: rgba(6, 182, 212, 0.15); }
+        .chaos-item:nth-child(4) .chaos-icon { background: rgba(168, 85, 247, 0.15); }
+
+        .chaos-info {
+            flex: 1;
+        }
+
+        .chaos-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .chaos-desc {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .chaos-duration {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            padding: 0.25rem 0.6rem;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 6px;
+        }
+
+        /* Services grid */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .service-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .service-card:hover {
+            border-color: var(--border-glow);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .service-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            margin: 0 auto 1rem;
+        }
+
+        .service-card:nth-child(1) .service-icon { background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05)); }
+        .service-card:nth-child(2) .service-icon { background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.05)); }
+        .service-card:nth-child(3) .service-icon { background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.05)); }
+        .service-card:nth-child(4) .service-icon { background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(244, 63, 94, 0.05)); }
+
+        .service-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .service-desc {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .service-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-top: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 100px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-emerald);
+        }
+
+        .service-status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-emerald);
+            border-radius: 50%;
+        }
+
+        /* Architecture section */
+        .arch-card {
+            grid-column: span 2;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .tech-tag {
+            padding: 0.4rem 0.8rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .tech-tag:hover {
+            border-color: var(--accent-indigo);
+            color: var(--accent-indigo);
+        }
+
+        /* Flow diagram */
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            white-space: nowrap;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            animation: flow-in 0.5s ease-out backwards;
+        }
+
+        .flow-step:nth-child(1) { animation-delay: 0.1s; }
+        .flow-step:nth-child(3) { animation-delay: 0.2s; }
+        .flow-step:nth-child(5) { animation-delay: 0.3s; }
+        .flow-step:nth-child(7) { animation-delay: 0.4s; }
+        .flow-step:nth-child(9) { animation-delay: 0.5s; }
+        .flow-step:nth-child(11) { animation-delay: 0.6s; }
+        .flow-step:nth-child(13) { animation-delay: 0.7s; }
+
+        @keyframes flow-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .flow-arrow {
+            color: var(--accent-indigo);
+            font-size: 0.8rem;
+            animation: flow-in 0.5s ease-out backwards;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .stats-grid, .services-grid { grid-template-columns: repeat(2, 1fr); }
+            .content-grid { grid-template-columns: 1fr; }
+            .arch-card { grid-column: span 1; }
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid, .services-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; gap: 1rem; }
+            .pods-grid { grid-template-columns: 1fr; }
+            .pipeline { flex-direction: column; }
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.6s ease-out backwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in:nth-child(1) { animation-delay: 0.05s; }
+        .fade-in:nth-child(2) { animation-delay: 0.1s; }
+        .fade-in:nth-child(3) { animation-delay: 0.15s; }
+        .fade-in:nth-child(4) { animation-delay: 0.2s; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">⚡</div>
+                <div class="header-title">
+                    <h1>DR Chaos Platform</h1>
+                    <p>Disaster Recovery & Chaos Engineering Command Center</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    All Systems Operational
+                </div>
+                <div class="live-time" id="liveTime">--:--:--</div>
+            </div>
+        </header>
+
+        <main class="main">
+            <!-- Stats -->
+            <div class="section-title">📊 System Overview</div>
+            <div class="stats-grid">
+                <div class="stat-card fade-in">
+                    <div class="stat-icon">🟢</div>
+                    <div class="stat-label">Active Pods</div>
+                    <div class="stat-value" id="podCount">3/3</div>
+                    <div class="stat-sub">All replicas healthy</div>
+                </div>
+                <div class="stat-card fade-in">
+                    <div class="stat-icon">🚀</div>
+                    <div class="stat-label">Pipeline Status</div>
+                    <div class="stat-value">PASS</div>
+                    <div class="stat-sub">Last build: #24 — Success</div>
+                </div>
+                <div class="stat-card fade-in">
+                    <div class="stat-icon">🔮</div>
+                    <div class="stat-label">Chaos Experiments</div>
+                    <div class="stat-value">4</div>
+                    <div class="stat-sub">Pod Kill, CPU, Network, DNS</div>
+                </div>
+                <div class="stat-card fade-in">
+                    <div class="stat-icon">🛡️</div>
+                    <div class="stat-label">Vulnerabilities</div>
+                    <div class="stat-value">4</div>
+                    <div class="stat-sub">Critical (Tomcat CVEs)</div>
+                </div>
+            </div>
+
+            <!-- Services -->
+            <div class="section-title">🔗 Quick Access</div>
+            <div class="services-grid">
+                <a class="service-card fade-in" href="javascript:void(0)" id="jenkinsLink">
+                    <div class="service-icon">🔧</div>
+                    <div class="service-name">Jenkins</div>
+                    <div class="service-desc">CI/CD Pipeline</div>
+                    <div class="service-status">
+                        <div class="service-status-dot"></div>
+                        Running
+                    </div>
+                </a>
+                <a class="service-card fade-in" href="http://localhost:3000" target="_blank">
+                    <div class="service-icon">📊</div>
+                    <div class="service-name">Grafana</div>
+                    <div class="service-desc">Monitoring Dashboards</div>
+                    <div class="service-status">
+                        <div class="service-status-dot"></div>
+                        Running
+                    </div>
+                </a>
+                <a class="service-card fade-in" href="http://localhost:2333" target="_blank">
+                    <div class="service-icon">🌪️</div>
+                    <div class="service-name">Chaos Mesh</div>
+                    <div class="service-desc">Chaos Dashboard</div>
+                    <div class="service-status">
+                        <div class="service-status-dot"></div>
+                        Running
+                    </div>
+                </a>
+                <a class="service-card fade-in" href="/actuator/health" target="_blank">
+                    <div class="service-icon">❤️</div>
+                    <div class="service-name">Health Check</div>
+                    <div class="service-desc">Application Status</div>
+                    <div class="service-status">
+                        <div class="service-status-dot"></div>
+                        Healthy
+                    </div>
+                </a>
+            </div>
+
+            <!-- Two columns -->
+            <div class="content-grid">
+                <!-- Pipeline -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <div class="card-title">🔄 CI/CD Pipeline</div>
+                        <div class="card-badge badge-live">✓ Passing</div>
+                    </div>
+                    <div class="pipeline">
+                        <div class="pipeline-stage">
+                            <div class="stage-icon">🧪</div>
+                            <div class="stage-num">STAGE 1</div>
+                            <div class="stage-name">Test</div>
+                        </div>
+                        <div class="pipeline-stage">
+                            <div class="stage-icon">📦</div>
+                            <div class="stage-num">STAGE 2</div>
+                            <div class="stage-name">Build</div>
+                        </div>
+                        <div class="pipeline-stage">
+                            <div class="stage-icon">🐳</div>
+                            <div class="stage-num">STAGE 3</div>
+                            <div class="stage-name">Docker</div>
+                        </div>
+                        <div class="pipeline-stage">
+                            <div class="stage-icon">🔍</div>
+                            <div class="stage-num">STAGE 4</div>
+                            <div class="stage-name">Scan</div>
+                        </div>
+                        <div class="pipeline-stage">
+                            <div class="stage-icon">☸️</div>
+                            <div class="stage-num">STAGE 5</div>
+                            <div class="stage-name">Deploy</div>
+                        </div>
+                        <div class="pipeline-stage">
+                            <div class="stage-icon">💨</div>
+                            <div class="stage-num">STAGE 6</div>
+                            <div class="stage-name">Smoke</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pods -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <div class="card-title">☸️ Kubernetes Pods</div>
+                        <div class="card-badge badge-live">Live</div>
+                    </div>
+                    <div class="pods-grid">
+                        <div class="pod">
+                            <div class="pod-status-indicator"></div>
+                            <div class="pod-name">my-service-pod-1</div>
+                            <div class="pod-status">● Running</div>
+                            <div class="pod-meta">CPU: 12% | Mem: 180MB</div>
+                        </div>
+                        <div class="pod">
+                            <div class="pod-status-indicator"></div>
+                            <div class="pod-name">my-service-pod-2</div>
+                            <div class="pod-status">● Running</div>
+                            <div class="pod-meta">CPU: 8% | Mem: 165MB</div>
+                        </div>
+                        <div class="pod">
+                            <div class="pod-status-indicator"></div>
+                            <div class="pod-name">my-service-pod-3</div>
+                            <div class="pod-status">● Running</div>
+                            <div class="pod-meta">CPU: 15% | Mem: 192MB</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chaos Experiments -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <div class="card-title">🌪️ Chaos Experiments</div>
+                        <div class="card-badge badge-ready">Ready</div>
+                    </div>
+                    <div class="chaos-list">
+                        <div class="chaos-item">
+                            <div class="chaos-icon">🔪</div>
+                            <div class="chaos-info">
+                                <div class="chaos-name">Pod Kill</div>
+                                <div class="chaos-desc">Randomly terminates 1 pod to test self-healing</div>
+                            </div>
+                            <div class="chaos-duration">instant</div>
+                        </div>
+                        <div class="chaos-item">
+                            <div class="chaos-icon">🔥</div>
+                            <div class="chaos-info">
+                                <div class="chaos-name">CPU Stress</div>
+                                <div class="chaos-desc">Spikes CPU to 80% on 2 pods</div>
+                            </div>
+                            <div class="chaos-duration">2m</div>
+                        </div>
+                        <div class="chaos-item">
+                            <div class="chaos-icon">🌐</div>
+                            <div class="chaos-info">
+                                <div class="chaos-name">Network Delay</div>
+                                <div class="chaos-desc">Injects 200ms ± 50ms latency</div>
+                            </div>
+                            <div class="chaos-duration">3m</div>
+                        </div>
+                        <div class="chaos-item">
+                            <div class="chaos-icon">💀</div>
+                            <div class="chaos-info">
+                                <div class="chaos-name">DNS Failure</div>
+                                <div class="chaos-desc">Breaks all DNS resolution</div>
+                            </div>
+                            <div class="chaos-duration">1m</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Architecture -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <div class="card-title">🏗️ Architecture</div>
+                    </div>
+                    <div class="flow">
+                        <div class="flow-step">📝 Git Push</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step">🔧 Jenkins</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step">🐳 Docker + ECR</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step">🔍 Trivy Scan</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step">☸️ EKS Deploy</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step">📊 Prometheus</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step">📈 Grafana</div>
+                    </div>
+                    <div class="tech-stack">
+                        <span class="tech-tag">Spring Boot 3.2</span>
+                        <span class="tech-tag">Java 21</span>
+                        <span class="tech-tag">Docker</span>
+                        <span class="tech-tag">Kubernetes</span>
+                        <span class="tech-tag">AWS EKS</span>
+                        <span class="tech-tag">AWS ECR</span>
+                        <span class="tech-tag">Terraform</span>
+                        <span class="tech-tag">Jenkins</span>
+                        <span class="tech-tag">Prometheus</span>
+                        <span class="tech-tag">Grafana</span>
+                        <span class="tech-tag">Chaos Mesh</span>
+                        <span class="tech-tag">Trivy</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            Built with ⚡ by John K — Disaster Recovery & Chaos Engineering Platform © 2026
+        </footer>
+    </div>
+
+    <script>
+        // Live clock
+        function updateTime() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { hour12: false });
+            document.getElementById('liveTime').textContent = time;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Fetch health status
+        async function checkHealth() {
+            try {
+                const response = await fetch('/actuator/health');
+                const data = await response.json();
+                if (data.status === 'UP') {
+                    document.querySelector('.status-badge').innerHTML = '<div class="status-dot"></div> All Systems Operational';
+                }
+            } catch (e) {
+                // Health check not reachable — static mode
+            }
+        }
+        checkHealth();
+        setInterval(checkHealth, 30000);
+
+        // Simulate subtle pod metric changes
+        function animateMetrics() {
+            const pods = document.querySelectorAll('.pod-meta');
+            pods.forEach(pod => {
+                const cpu = Math.floor(Math.random() * 20) + 5;
+                const mem = Math.floor(Math.random() * 50) + 150;
+                pod.textContent = `CPU: ${cpu}% | Mem: ${mem}MB`;
+            });
+        }
+        setInterval(animateMetrics, 5000);
+    </script>
+</body>
+</html>

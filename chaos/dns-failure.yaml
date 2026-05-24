@@ -2,7 +2,7 @@ apiVersion: chaos-mesh.org/v1alpha1
 kind: DNSChaos
 metadata:
   name: dns-failure
-  namespace: production
+  namespace: default
 spec:
   action: error
   mode: all
@@ -10,7 +10,7 @@ spec:
     - '*'
   selector:
     namespaces:
-      - production
+      - default
     labelSelectors:
       'app': 'my-service'
   duration: '1m'
