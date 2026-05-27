@@ -32,7 +32,7 @@ spec:
               app: my-service
       containers:
         - name: my-service
-          image: my-service:latest
+          image: 758985713226.dkr.ecr.us-east-1.amazonaws.com/my-service:latest
           ports:
             - containerPort: 8080
           resources:
